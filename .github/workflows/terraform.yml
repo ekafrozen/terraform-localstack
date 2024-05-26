@@ -16,10 +16,20 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Set up Localstack
-      uses: localstack/aws-samples-localstack-github-action@v0.1
-      with:
-        services: s3
+    - name: Set up Docker
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y docker.io
+
+    - name: Start Localstack
+      run: |
+        docker run -d --name localstack -e SERVICES=s3 -p 4566:4566 localstack/localstack
+        echo "Waiting for Localstack to be ready..."
+        until curl -s http://localhost:4566/health | grep "\"s3\": \"running\""; do
+          echo "Waiting for Localstack..."
+          sleep 5
+        done
+        echo "Localstack is ready!"
 
     - name: Set up Terraform
       uses: hashicorp/setup-terraform@v1
