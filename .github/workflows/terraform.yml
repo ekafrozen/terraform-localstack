@@ -16,28 +16,21 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Set up Docker
+    - name: Set up Localstack
       run: |
-        curl -fsSL https://get.docker.com -o get-docker.sh
-        sh get-docker.sh
+        # Install Localstack
+        pip install localstack
+        # Start Localstack
+        localstack start --docker
 
-    - name: Start Localstack
+    - name: Wait for Localstack
       run: |
-        docker run -d --name localstack -e SERVICES=s3 -p 4566:4566 localstack/localstack
         echo "Waiting for Localstack to be ready..."
-        for i in {1..30}; do
-          if curl -s http://localhost:4566/health | grep "\"s3\": \"running\""; then
-            echo "Localstack is ready!"
-            break
-          fi
-          echo "Waiting for Localstack... ($i/30)"
-          docker logs localstack
+        until curl -s http://localhost:4566/health | grep "\"s3\": \"running\""; do
+          echo "Waiting for Localstack..."
           sleep 5
         done
-        if [ $i -eq 30 ]; then
-          echo "Localstack did not start in time."
-          exit 1
-        fi
+        echo "Localstack is ready!"
 
     - name: Set up Terraform
       uses: hashicorp/setup-terraform@v1
