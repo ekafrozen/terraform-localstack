@@ -1,3 +1,9 @@
+provider "aws" {
+  region = "us-west-2"
+  access_key = "fake"
+  secret_key = "fake"
+}
+
 resource "aws_s3_bucket" "my_bucket" {
   bucket = "my-bucket-name"
 }
