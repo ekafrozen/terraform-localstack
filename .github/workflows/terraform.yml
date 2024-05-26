@@ -27,11 +27,10 @@ jobs:
 
     - name: Start Localstack
       run: |
-        docker run --name localstack -e SERVICES=s3 -p 4566:4566 localstack/localstack > localstack_output.txt 2>&1 &
-        echo "Localstack is starting..."
-        sleep 10
-        echo "Localstack logs:"
-        cat localstack_output.txt
+        docker run -d --name localstack -e SERVICES=s3 -p 4566:4566 localstack/localstack
+
+    - name: Wait for Localstack
+      run: |
         echo "Waiting for Localstack to be ready..."
         until curl -s http://localhost:4566/health | grep "\"s3\": \"running\""; do
           echo "Waiting for Localstack..."
