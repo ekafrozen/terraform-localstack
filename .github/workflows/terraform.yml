@@ -16,49 +16,39 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
+    - name: Install Terraform
+      run: |
+        wget https://releases.hashicorp.com/terraform/1.1.5/terraform_1.1.5_linux_amd64.zip
+        unzip terraform_1.1.5_linux_amd64.zip
+        sudo mv terraform /usr/local/bin/
+        terraform --version
+
     - name: Set up Docker
       run: |
         curl -fsSL https://get.docker.com -o get-docker.sh
         sh get-docker.sh
 
-    - name: Pull Localstack Docker image
+    - name: Pull LocalStack Docker image
       run: |
         docker pull localstack/localstack
 
-    - name: Start Localstack
+    - name: Start LocalStack
       run: |
-        docker run -d --name localstack -e SERVICES=s3 -p 4566:4566 -v /var/run/docker.sock:/var/run/docker.sock localstack/localstack
-
-    - name: Wait for Localstack
-      run: |
-        echo "Waiting for Localstack to be ready..."
-        for i in {1..10}; do
-          echo "Attempt $i"
+        docker run -d --name localstack -e SERVICES=s3 -p 4566:4566 localstack/localstack
+        echo "Waiting for LocalStack to be ready..."
+        until curl -s http://localhost:4566/health | grep "\"s3\": \"running\""; do
+          echo "Waiting for LocalStack..."
           sleep 5
-          docker logs localstack
-          if curl -s http://localhost:4566/health | grep "\"s3\": \"running\""; then
-            echo "Localstack is ready!"
-            break
-          fi
         done
-        if [ $i -eq 10 ]; then
-          echo "Localstack did not start in time."
-          exit 1
-        fi
+        echo "LocalStack is ready!"
 
     - name: Set up Terraform
-      uses: hashicorp/setup-terraform@v1
-      with:
-        terraform_version: 1.1.5
-
-    - name: Terraform Init
-      run: terraform init
+      run: |
+        terraform init
+        terraform plan
 
     - name: Terraform Validate
       run: terraform validate
-
-    - name: Terraform Plan
-      run: terraform plan
 
     - name: Terraform Apply
       if: github.ref == 'refs/heads/main'
