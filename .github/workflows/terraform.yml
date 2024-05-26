@@ -18,18 +18,16 @@ jobs:
 
     - name: Set up Docker
       run: |
-        curl -fsSL https://get.docker.com -o get-docker.sh
-        sh get-docker.sh
+        sudo apt-get update
+        sudo apt-get install -y docker.io
 
-    - name: Set up Localstack
+    - name: Pull Localstack Docker image
       run: |
-        # Install Localstack
-        pip install localstack
-        # Start Localstack
-        localstack start --docker
+        docker pull localstack/localstack
 
-    - name: Wait for Localstack
+    - name: Start Localstack
       run: |
+        docker run -d --name localstack -e SERVICES=s3 -p 4566:4566 localstack/localstack
         echo "Waiting for Localstack to be ready..."
         until curl -s http://localhost:4566/health | grep "\"s3\": \"running\""; do
           echo "Waiting for Localstack..."
