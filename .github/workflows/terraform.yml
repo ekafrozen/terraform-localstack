@@ -32,11 +32,19 @@ jobs:
     - name: Wait for Localstack
       run: |
         echo "Waiting for Localstack to be ready..."
-        until curl -s http://localhost:4566/health | grep "\"s3\": \"running\""; do
-          echo "Waiting for Localstack..."
+        for i in {1..10}; do
+          echo "Attempt $i"
           sleep 5
+          docker logs localstack
+          if curl -s http://localhost:4566/health | grep "\"s3\": \"running\""; then
+            echo "Localstack is ready!"
+            break
+          fi
         done
-        echo "Localstack is ready!"
+        if [ $i -eq 10 ]; then
+          echo "Localstack did not start in time."
+          exit 1
+        fi
 
     - name: Set up Terraform
       uses: hashicorp/setup-terraform@v1
